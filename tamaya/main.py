@@ -10,7 +10,7 @@ if __name__ == '__main__':
     # 条件なし
     # MEMO: 依頼主のお届け先情報リスト
 
-    # dtb_customer_addressリスト と 「dtb_order と dtb_shippingの結合」リスト の突き合わせ
+    # 「dtb_order と dtb_shippingの結合」リスト と dtb_customer_addressリスト の突き合わせ
     
         # 名前と郵便番号 が一致するか？
             # 一致の場合、updateリストに追加
