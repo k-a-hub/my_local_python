@@ -13,7 +13,7 @@ services:
     working_dir: '/root'
     environment :
       MYSQL_ROOT_PASSWORD : root
-      MYSQL_USER : root
+      MYSQL_USER : test
       MYSQL_PASSWORD : password
       LANG : ja_JP.UTF-8
 
