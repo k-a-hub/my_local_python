@@ -1,0 +1,28 @@
+version: '3'
+services:
+  db :
+    build:
+      context: ./
+      dockerfile: Dockerfile-mysql
+    container_name: 'tamaya_db'
+    ports:
+      - "127.0.0.1:16606:16606"
+    volumes:
+      - ./db/mysql_data:/var/lib/mysql
+      - ./db/my.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    working_dir: '/root'
+    environment :
+      MYSQL_ROOT_PASSWORD : root
+      MYSQL_USER : root
+      MYSQL_PASSWORD : password
+      LANG : ja_JP.UTF-8
+
+  python3:
+    build:
+      context: ./
+      dockerfile: Dockerfile-python
+    container_name: 'tamaya_python3'
+    working_dir: '/home/root/'
+    tty: true
+    volumes:
+      - ./tamaya:/home/root/opt:cached
