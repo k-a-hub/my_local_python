@@ -25,9 +25,9 @@ class db_accessor:
             # 自動コミット設定をオフ
             self.conn.autocommit = False
 
-            # カーソル情報の初期化
             self.conn.is_connected()
-            self.cur = self.conn.cursor()
+            # カーソル情報の作成(辞書型リストとして結果を取得するよう設定)
+            self.cur = self.conn.cursor(dictionary=True)
         except Exception as e:
             print(f"connect error: \r\n{e}")
             
