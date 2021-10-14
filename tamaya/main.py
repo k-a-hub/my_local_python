@@ -1,4 +1,5 @@
 import db_accessor as dba
+import dtb_customer_address as c_address
 
 # 受注注文日
 order_date = "2021-12-31 00:00:00"
@@ -64,21 +65,38 @@ if __name__ == '__main__':
     customer_address_list = db_accessor.execute_query(customer_address_sql)
     print(f"依頼主のお届け先情報リスト: {len(customer_address_list)}件")
 
+    # upsert用リスト保持オブジェクト
+    obj_customer_address = c_address.dtb_customer_address()
+
     # 「dtb_order と dtb_shippingの結合」リスト と dtb_customer_addressリスト の突き合わせ
     # 1受注のお届け先情報リストの繰り返し
     for order_shipping in order_shipping_list:
+
+        # リスト追加フラグ - 追加時にTrue
+        list_add_flg = False
+
         # 依頼主のお届け情報リストの繰り返し
         for customer_address in customer_address_list:
+
             # 名前と郵便番号 が一致するか？
             if order_shipping["name01"] == customer_address["name01"] \
                 and order_shipping["name02"] == customer_address["name02"] \
                 and order_shipping["postal_code"] == customer_address["postal_code"]:
+
                     # 一致の場合、updateリストに追加
+                    obj_customer_address.add_update_list(order_shipping, customer_address)
+                    # 追加したのでフラグを変更
+                    list_add_flg = not list_add_flg
                     # 以降の依頼主のお届け情報リストの比較は必要ないので次の受注へ
                     break
-            else:
-                    # 不一致の場合、insertリストに追加
-                    pass
+
+        # 更新リストへの追加が無い場合
+        if not list_add_flg:
+            # 不一致の場合、insertリストに追加
+            obj_customer_address.add_insert_list(order_shipping)
+    
+    print(f"\t更新件数: {len(obj_customer_address.update_list)}件")
+    print(f"\t登録件数: {len(obj_customer_address.insert_list)}件")
 
     # dtb_customer_addressへの反映
     # updateリストの更新
