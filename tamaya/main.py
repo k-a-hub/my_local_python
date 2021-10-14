@@ -49,7 +49,7 @@ if __name__ == '__main__':
     """
 
     order_shipping_list = db_accessor.execute_query(order_shipping_select_sql)
-    print(order_shipping_list)
+    print(f"1受注のお届け先情報リスト: {len(order_shipping_list)}件")
 
     # dtb_customer_addressの一覧を取得
     # 条件なし
@@ -62,13 +62,23 @@ if __name__ == '__main__':
     """
 
     customer_address_list = db_accessor.execute_query(customer_address_sql)
-    print(customer_address_list)
+    print(f"依頼主のお届け先情報リスト: {len(customer_address_list)}件")
 
     # 「dtb_order と dtb_shippingの結合」リスト と dtb_customer_addressリスト の突き合わせ
-    
-        # 名前と郵便番号 が一致するか？
-            # 一致の場合、updateリストに追加
-            # 不一致の場合、insertリストに追加
+    # 1受注のお届け先情報リストの繰り返し
+    for order_shipping in order_shipping_list:
+        # 依頼主のお届け情報リストの繰り返し
+        for customer_address in customer_address_list:
+            # 名前と郵便番号 が一致するか？
+            if order_shipping["name01"] == customer_address["name01"] \
+                and order_shipping["name02"] == customer_address["name02"] \
+                and order_shipping["postal_code"] == customer_address["postal_code"]:
+                    # 一致の場合、updateリストに追加
+                    # 以降の依頼主のお届け情報リストの比較は必要ないので次の受注へ
+                    break
+            else:
+                    # 不一致の場合、insertリストに追加
+                    pass
 
     # dtb_customer_addressへの反映
     # updateリストの更新
