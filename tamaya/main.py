@@ -1,12 +1,56 @@
+import sys
+import datetime as dt
 import db_accessor as dba
 import dtb_customer_address as c_address
 
-# 受注注文日
-order_date = "2021-12-31 00:00:00"
+# 引数確認
+def validation_args(argv):
+    
+    # エラーメッセージ
+    error_message = ""
+
+    # 引数が無い場合
+    if len(argv) == 1:
+        error_message = f"""
+    「受注日」か「受注日時」を引数として設定してください。
+    受注日のみの場合、時刻は0時0分0秒が設定されます。
+    設定例):
+            python3 {argv[0]} "2021-04-01 10:00:00"
+    もしくは
+            python3 {argv[0]} 2021-04-01
+        """
+    elif len(argv) != 2:
+        # 引数が多い場合
+        error_message = "引数が多すぎます。"
+    
+    if error_message != "":
+        # エラーメッセージの表示
+        print(error_message)
+        # 以降の処理を実施せずに終了
+        sys.exit()
+    else:
+        # 戻り値
+        return_value = ""
+        try:
+            # 日付型に変換
+            if len(argv[1]) == 10:
+                return_value = dt.datetime.strptime(argv[1], '%Y-%m-%d')
+            else:                
+                return_value = dt.datetime.strptime(argv[1], '%Y-%m-%d %H:%M:%S')
+        except Exception as e:
+            # 日付変換エラー
+            print(f"日付変換エラー\n{e}")
+            # 以降の処理を実施せずに終了
+            sys.exit()
+
+    return return_value.strftime('%Y-%m-%d %H:%M:%S')
 
 
 # ここから開始
 if __name__ == '__main__':
+
+    # 引数の正常性確認
+    order_date = validation_args(sys.argv)
 
     # DB接続クラス作成
     db_accessor = dba.db_accessor()
