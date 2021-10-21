@@ -112,7 +112,26 @@ if __name__ == '__main__':
         print(f"受注ID {latest_order['id']} のお届け先数: {len(order_shipping_join_item_list)}件")
 
         # お届け先情報リストの繰り返し
-            # dtb_customer_addressから取得
+        for order_shipping_join_item in order_shipping_join_item_list:
+
+            # 受注の依頼主IDとお届け先の名前をキーに依頼主のお届け先情報のSELECT文
+            # dtb_customer_addressのみ
+            customer_address_select_sql = f"""
+                SELECT
+                    *
+                FROM
+                    dtb_customer_address
+                WHERE
+                    customer_id = {latest_order["customer_id"]}
+                AND
+                    name01 = '{order_shipping_join_item["name01"]}'
+                AND
+                    name02 = '{order_shipping_join_item["name02"]}'
+            """
+
+            customer_address_data = db_accessor.execute_query(customer_address_select_sql)
+            print(f"依頼主のお届け先有無: {'追加' if len(customer_address_data) == 0 else '更新'}")
+
                 # 取得できれば更新
                 # 取得できなければ追加
 
