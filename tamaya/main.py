@@ -132,10 +132,16 @@ if __name__ == '__main__':
             customer_address_data = db_accessor.execute_query(customer_address_select_sql)
             print(f"依頼主のお届け先有無: {'追加' if len(customer_address_data) == 0 else '更新'}")
 
+            if len(customer_address_data) > 0:
                 # 取得できれば更新
+                obj_customer_address.add_update_list(latest_order, order_shipping_join_item, customer_address_data)
+            else:
                 # 取得できなければ追加
+                obj_customer_address.add_insert_list(latest_order, order_shipping_join_item)
 
     # dtb_customer_addressへの反映
+    print(f"dtb_customer_addresの更新件数: {len(obj_customer_address.update_list)}件")
+    print(f"dtb_customer_addresの追加件数: {len(obj_customer_address.insert_list)}件")
     # updateリストの更新
     # insertリストの追加
 
