@@ -10,11 +10,11 @@ class dtb_customer_address:
         self.insert_list = []
     
     # 更新リスト追加
-    def add_update_list(self, order_shipping, customer_address):
+    def add_update_list(self, order, shipping_join_item, customer_address):
         # 更新する受注のお届け先情報を追加
-        self.update_list.append(order_shipping)
+        self.update_list.append([order, shipping_join_item, customer_address])
 
     # 登録リスト追加
-    def add_insert_list(self, order_shipping):
+    def add_insert_list(self, order, shipping_join_item):
         # 登録する受注のお届け先情報を追加
-        self.insert_list.append(order_shipping)
+        self.insert_list.append([order, shipping_join_item])
