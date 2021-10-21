@@ -4,14 +4,13 @@ import mysql.connector as mysql
 class db_accessor:
 
     # mysql接続情報
-    # Dockerで作成した別コンテナのmysql環境に接続する情報
+    # saga_tamaya_mysql_1への接続情報
     config = {
-        'host': 'tamaya_db'
+        'host': 'saga_tamaya_mysql_1'
         , 'port': '3306'
-        , 'user': 'test'
-        , 'password': 'password'
-        , 'database': 'tamaya'
-        , 'auth_plugin': 'mysql_native_password'
+        , 'user': 'dbuser'
+        , 'password': 'secret'
+        , 'database': 'sagatamaya_ec1'
     }
 
     # コンストラクタ
