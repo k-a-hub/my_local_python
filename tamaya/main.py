@@ -91,8 +91,26 @@ if __name__ == '__main__':
     obj_customer_address = c_address.dtb_customer_address()
 
     # 依頼主ごとの最新受注情報リストの繰り返し
+    for latest_order in latest_order_list:
 
-        # 最新受注情報のIDをキーにお届け先情報の取得
+        # 最新受注情報のIDをキーにお届け先情報のSELECT文
+        # dtb_shippingとdtb_order_itemの結合
+        order_shipping_join_item_select_sql = f"""
+            SELECT
+                *
+            FROM
+                dtb_shipping AS `ship`
+            JOIN
+                dtb_order_item AS `item` ON ship.id = item.shipping_id
+            WHERE
+                item.product_code IS NOT NULL
+            AND
+                ship.order_id = {latest_order["id"]}
+        """
+
+        order_shipping_join_item_list = db_accessor.execute_query(order_shipping_join_item_select_sql)
+        print(f"受注ID {latest_order['id']} のお届け先数: {len(order_shipping_join_item_list)}件")
+
         # お届け先情報リストの繰り返し
             # dtb_customer_addressから取得
                 # 取得できれば更新
