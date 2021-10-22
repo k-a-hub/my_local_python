@@ -56,10 +56,13 @@ if __name__ == '__main__':
     db_accessor = dba.db_accessor()
     
     # 期間内で依頼主ごとの最新の受注情報のSELECT文
+    # dtb_customer_address登録時にdtb_customerに登録されていないcustomer_idも存在するのでJOINして未登録分を弾く
     # dtb_orderのみ
     latest_order_select_sql = f"""
         SELECT
-            *
+            order.id AS order_id
+            ,order.customer_id AS customer_id
+            ,order.order_date
         FROM
             (
                 SELECT
@@ -80,6 +83,8 @@ if __name__ == '__main__':
                     customer_id ASC
                     ,order_date DESC
             ) AS `order`
+        JOIN
+            `dtb_customer` AS customer ON order.customer_id = customer.id
         GROUP BY
             order.customer_id
     """
@@ -97,7 +102,23 @@ if __name__ == '__main__':
         # dtb_shippingとdtb_order_itemの結合
         order_shipping_join_item_select_sql = f"""
             SELECT
-                *
+                ship.id AS ship_id
+                ,country_id
+                ,pref_id
+                ,name01
+                ,name02
+                ,kana01
+                ,kana02
+                ,company_name
+                ,postal_code
+                ,addr01
+                ,addr02
+                ,phone_number
+                ,update_date
+                ,position
+                ,title
+                ,item.id AS item_id
+                ,accept_no
             FROM
                 dtb_shipping AS `ship`
             JOIN
@@ -105,11 +126,11 @@ if __name__ == '__main__':
             WHERE
                 item.product_code IS NOT NULL
             AND
-                ship.order_id = {latest_order["id"]}
+                ship.order_id = {latest_order["order_id"]}
         """
 
         order_shipping_join_item_list = db_accessor.execute_query(order_shipping_join_item_select_sql)
-        print(f"受注ID {latest_order['id']} のお届け先数: {len(order_shipping_join_item_list)}件")
+        # print(f"受注ID {latest_order['id']} のお届け先数: {len(order_shipping_join_item_list)}件")
 
         # お届け先情報リストの繰り返し
         for order_shipping_join_item in order_shipping_join_item_list:
@@ -130,11 +151,11 @@ if __name__ == '__main__':
             """
 
             customer_address_data = db_accessor.execute_query(customer_address_select_sql)
-            print(f"依頼主のお届け先有無: {'追加' if len(customer_address_data) == 0 else '更新'}")
+            # print(f"依頼主のお届け先有無: {'追加' if len(customer_address_data) == 0 else '更新'}")
 
             if len(customer_address_data) > 0:
                 # 取得できれば更新
-                obj_customer_address.add_update_list(latest_order, order_shipping_join_item, customer_address_data)
+                obj_customer_address.add_update_list(order_shipping_join_item, customer_address_data[0])
             else:
                 # 取得できなければ追加
                 obj_customer_address.add_insert_list(latest_order, order_shipping_join_item)
@@ -142,8 +163,10 @@ if __name__ == '__main__':
     # dtb_customer_addressへの反映
     print(f"dtb_customer_addresの更新件数: {len(obj_customer_address.update_list)}件")
     print(f"dtb_customer_addresの追加件数: {len(obj_customer_address.insert_list)}件")
-    # updateリストの更新
-    # insertリストの追加
+    # 更新処理
+    print(f"更新実行件数: {obj_customer_address.exec_update(db_accessor)}件")
+    # 追加処理
+    print(f"追加実行件数: {obj_customer_address.exec_insert(db_accessor)}件")
 
     # 処理終了
     exit
