@@ -1,3 +1,4 @@
+from datetime import date
 import mysql.connector as mysql
 
 
@@ -47,4 +48,28 @@ class db_accessor:
             return result
         except Exception as e:
             print(f"query error: \r\n{e}")
+
+    # UPDATE実行
+    def excecute_update(self, sql):
+
+        try:
+            self.cur.execute(sql)
+            # self.conn.commit()
+            return max(self.cur.rowcount, 1)
+        except Exception as e:
+            self.conn.rollback()
+            print(f"update error: \r\n{e}")
+            print(f"query: {sql}")
+
+    # INSERT実行
+    def execute_insert(self, sql):
+        
+        try:
+            self.cur.execute(sql)
+            # self.conn.commit()
+            return self.cur.rowcount
+        except Exception as e:
+            self.conn.rollback()
+            print(f"insert error: \r\n{e}")
+            # print(f"query: {sql}")
 
