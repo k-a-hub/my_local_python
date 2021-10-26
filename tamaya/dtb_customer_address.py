@@ -2,6 +2,7 @@ import datetime
 import sys
 
 
+# TODO: dataclassesに置き換える方法を模索
 class dtb_customer_address:
 
     # コンストラクタ
