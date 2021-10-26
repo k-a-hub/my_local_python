@@ -1,4 +1,3 @@
-from datetime import date
 import mysql.connector as mysql
 
 

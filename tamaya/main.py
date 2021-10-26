@@ -2,6 +2,7 @@ import sys
 import datetime as dt
 import db_accessor as dba
 import dtb_customer_address as c_address
+import re
 
 # 引数確認
 def validation_args(argv):
@@ -55,41 +56,68 @@ if __name__ == '__main__':
     # DB接続クラス作成
     db_accessor = dba.db_accessor()
     
-    # 期間内で依頼主ごとの最新の受注情報のSELECT文
+    # 期間内の受注情報のSELECT文
     # dtb_customer_address登録時にdtb_customerに登録されていないcustomer_idも存在するのでJOINして未登録分を弾く
-    # dtb_orderのみ
-    latest_order_select_sql = f"""
+    # 取得列はdtb_orderのみ
+    order_select_sql = f"""
         SELECT
             order.id AS order_id
             ,order.customer_id AS customer_id
             ,order.order_date
+            ,order.note
         FROM
-            (
-                SELECT
-                    id
-                    ,customer_id
-                    ,order_date
-                FROM
-                    dtb_order
-                WHERE
-                    payment_id IN (7,8,9)
-                AND
-                    order_date >= '{order_date}'
-                AND
-                    customer_id IS NOT NULL
-                GROUP BY
-                    id
-                ORDER BY
-                    customer_id ASC
-                    ,order_date DESC
-            ) AS `order`
+            dtb_order AS `order`
         JOIN
-            `dtb_customer` AS customer ON order.customer_id = customer.id
-        GROUP BY
-            order.customer_id
+            dtb_customer AS `customer` ON order.customer_id = customer.id
+        WHERE
+            order.payment_id IN (7, 8, 9)
+          AND
+            order.order_date >= '{order_date}'
+        ORDER BY
+            order.customer_id ASC
+            ,order.order_date DESC
+            ,order.id ASC;
     """
 
-    latest_order_list = db_accessor.execute_query(latest_order_select_sql)
+    order_list = db_accessor.execute_query(order_select_sql)
+    print(f"期間内の受注情報リスト: {len(order_list)}件")
+
+    # 依頼主のIDをキーにメイン受注NoのIDを格納
+    latest_order_dict = {}
+    # 期間内で依頼主ごとの最新の受注情報
+    latest_order_list = []
+    
+    # 期間内の受注情報リストの繰り返し
+    for order in order_list:
+
+        # 依頼主IDと受注ID
+        customer_id = order["customer_id"]
+        order_id = order["order_id"]
+
+        # 依頼主IDが存在しない場合
+        if customer_id not in latest_order_dict:
+            # 依頼主IDをキーにメイン受注Noをセット
+            latest_order_dict.setdefault(customer_id, order_id)
+            # 最新の受注情報としてリストに追加
+            latest_order_list.append(order)
+        else:
+            # 依頼主IDが存在する場合
+            # ショップ用メモ欄がNULLなら次へ
+            if order["note"] is None:
+                continue
+            # ショップ用メモ欄に「メイン受注No: 」の記載がなければ次へ
+            search_result = re.search(r'(メイン受注No:) (.*)(.|\r|\n\r\|\n)', order["note"])
+            if search_result is None:
+                continue
+            
+            # メイン受注NoのID
+            main_order_no = int(re.sub(r'メイン受注No: ', "", search_result.group()))
+
+            # ショップ用メモ欄に記載のメイン受注番号が一致しているか
+            if main_order_no == latest_order_dict[customer_id]:
+                # お届け先が21件以上のデータ、最新の受注情報なのでリストに追加
+                latest_order_list.append(order)
+
     print(f"依頼主ごとの最新受注情報リスト: {len(latest_order_list)}件")
 
     # upsert用リスト保持オブジェクト
