@@ -32,7 +32,5 @@ MariaDB [sagatamaya_ec1]> SELECT id, delete_end_season FROM dtb_customer_address
 | 101372 |                 0 |
 | 101373 |                 0 |
 | 101374 |                 0 |
-| 101375 |                 1 |
-| 101379 |                 1 |
 +--------+-------------------+
-32 rows in set (0.002 sec)
+30 rows in set (0.004 sec)
