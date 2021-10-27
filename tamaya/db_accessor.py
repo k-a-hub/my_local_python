@@ -72,3 +72,13 @@ class db_accessor:
             print(f"insert error: \r\n{e}")
             # print(f"query: {sql}")
 
+    # DELETE実行
+    def exceute_delete(self, sql):
+
+        try:
+            self.cur.execute(sql)
+            # self.conn.commit()
+            return self.cur.rowcount
+        except Exception as e:
+            self.conn.rollback()
+            print(f"delete error: \r\n{e}")

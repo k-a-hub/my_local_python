@@ -11,6 +11,8 @@ class dtb_customer_address:
         self.update_list = []
         # 登録リスト
         self.insert_list = []
+        # 削除リスト
+        self.delete_list = []
     
     # 更新リスト追加
     def add_update_list(self, shipping_join_item, customer_address):
@@ -104,6 +106,37 @@ class dtb_customer_address:
         # 登録する受注のお届け先情報を追加
         self.insert_list.append(tuple(insert))
 
+    # 今シーズンで削除のお届け先情報の取得
+    def get_delete_end_season(self, instance_db_accessor):
+        # 今シーズンで削除のお届け先情報のSELECT文
+        delete_end_season_select_sql = f"""
+            SELECT
+                id
+            FROM
+                dtb_customer_address
+            WHERE
+                delete_end_season = 1
+        """
+
+        # 取得して削除リストに詰める
+        self.add_delete_list(instance_db_accessor.execute_query(delete_end_season_select_sql))
+        print(f"今シーズンで削除のお届け先リスト: {len(self.delete_list)}")
+
+        pass
+
+    # 削除リスト追加
+    def add_delete_list(self, customer_address_list):
+
+        for customer_address in customer_address_list:
+
+            # 削除するデータ
+            delete = []
+            # ID
+            delete.append(customer_address["id"])
+            
+            # 削除するお届け先を追加
+            self.delete_list.append(delete)
+
     # 更新処理
     def exec_update(self, instance_db_accessor):
         upd_count = 0
@@ -177,3 +210,21 @@ class dtb_customer_address:
                         values_str += v if v != 'None' and v != "'None'" else 'Null'
                 ins_count += instance_db_accessor.execute_insert(insert_sql.format(values_str))
         return ins_count
+
+    # 削除処理
+    def exec_delete(self, instance_db_accessor):
+        del_count = 0
+        if len(self.delete_list) > 0:
+            delete_sql = "\
+                DELETE FROM \
+                    `dtb_customer_address`\
+                WHERE\
+                    id IN ({})\
+            "
+            values_str = ""
+            for i, delete in enumerate(self.delete_list):
+                values_str += "," if i != 0 else ""
+                for d in delete:
+                    values_str += str(d)
+            del_count += instance_db_accessor.exceute_delete(delete_sql.format(values_str))
+        return del_count

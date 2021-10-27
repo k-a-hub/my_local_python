@@ -223,5 +223,9 @@ if __name__ == '__main__':
     print(f"dtb_customerの更新件数: {len(obj_customer.update_list)}件")
     print(f"更新実行件数: {obj_customer.exec_update(db_accessor)}件")
 
+    # 今シーズンで削除のお届け先情報の削除
+    obj_customer_address.get_delete_end_season(db_accessor)
+    print(f"削除実行件数: {obj_customer_address.exec_delete(db_accessor)}件")
+
     # 処理終了
     exit
