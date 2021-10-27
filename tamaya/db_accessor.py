@@ -58,7 +58,7 @@ class db_accessor:
         except Exception as e:
             self.conn.rollback()
             print(f"update error: \r\n{e}")
-            print(f"query: {sql}")
+            # print(f"query: {sql}")
 
     # INSERT実行
     def execute_insert(self, sql):
