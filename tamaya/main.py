@@ -3,6 +3,7 @@ import datetime as dt
 import db_accessor as dba
 import dtb_customer_address as c_address
 import re
+import dtb_customer as customer
 
 # 引数確認
 def validation_args(argv):
@@ -63,6 +64,25 @@ if __name__ == '__main__':
         SELECT
             order.id AS order_id
             ,order.customer_id AS customer_id
+            ,order.country_id
+            ,order.pref_id
+            ,order.sex_id
+            ,order.job_id
+            ,order.name01
+            ,order.name02
+            ,order.kana01
+            ,order.kana02
+            ,order.company_name
+            ,order.email
+            ,order.phone_number
+            ,order.postal_code
+            ,order.addr01
+            ,order.addr02
+            ,order.birth
+            ,order.update_date
+            ,order.agent_cd
+            ,order.sales_account_no
+            ,order.position
             ,order.order_date
             ,order.note
         FROM
@@ -195,6 +215,13 @@ if __name__ == '__main__':
     print(f"更新実行件数: {obj_customer_address.exec_update(db_accessor)}件")
     # 追加処理
     print(f"追加実行件数: {obj_customer_address.exec_insert(db_accessor)}件")
+
+    # dtb_customerへの反映
+    obj_customer = customer.dtb_customer()
+    # 最新受注情報リストを元にdtb_customer更新情報を作成
+    obj_customer.add_update_list(latest_order_list)
+    print(f"dtb_customerの更新件数: {len(obj_customer.update_list)}件")
+    print(f"更新実行件数: {obj_customer.exec_update(db_accessor)}件")
 
     # 処理終了
     exit
