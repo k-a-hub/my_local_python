@@ -1,26 +1,5 @@
 version: '3'
 services:
-  db :
-    build:
-      context: ./
-      dockerfile: Dockerfile-mysql
-    container_name: 'tamaya_db'
-    ports:
-      - "127.0.0.1:16606:16606"
-    volumes:
-      - ./db/mysql_data:/var/lib/mysql
-      - ./db/my.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
-    working_dir: '/root'
-    environment :
-      MYSQL_ROOT_PASSWORD : root
-      MYSQL_DATABASE: tamaya
-      MYSQL_USER : test
-      MYSQL_PASSWORD : password
-      LANG : ja_JP.UTF-8
-    # DBログのmbind: Operation not permitted表示を消すため
-    cap_add:
-      - SYS_NICE
-
   python3:
     build:
       context: ./

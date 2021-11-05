@@ -64,12 +64,6 @@ $ docker network inspect saga_tamaya_default
 
 ## コンテナログイン方法
 ```sh
-# mysql環境
-$ tamayadb
-
-# DBログイン
-$ mysql -u test -p
-
 # python環境
 $ tamayapy
 
