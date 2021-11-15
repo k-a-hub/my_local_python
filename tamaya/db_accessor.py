@@ -1,11 +1,11 @@
-import mysql.connector as mysql
+from mysql.connector import connect
 
 
 class db_accessor:
 
     # mysql接続情報
     # saga_tamaya_mysql_1への接続情報
-    config = {
+    config: dict = {
         'host': 'saga_tamaya_mysql_1'
         , 'port': '3306'
         , 'user': 'dbuser'
@@ -13,12 +13,16 @@ class db_accessor:
         , 'database': 'sagatamaya_ec1'
     }
 
+
     # コンストラクタ
-    def __init__(self):
+    def __init__(self, commit_flg = True):
+
+        # コミットを行うかのフラグ
+        self.commit_flg = commit_flg
 
         try:
             # mysqlに接続
-            self.conn = mysql.connect(**self.config)
+            self.conn = connect(**self.config)
             # コネクションが切れた時に再接続してくれるよう設定
             self.conn.ping(reconnect=True)
             # 自動コミット設定をオフ
@@ -29,7 +33,8 @@ class db_accessor:
             self.cur = self.conn.cursor(dictionary=True)
         except Exception as e:
             print(f"connect error: \r\n{e}")
-            
+
+
     # デストラクタ
     def __del__(self):
 
@@ -38,8 +43,10 @@ class db_accessor:
         except Exception as e:
             print(f"connect close error: \r\n{e}")
 
+
     # クエリ実行
-    def execute_query(self, sql):
+    def execute_query(self, sql: str):
+
         try:
             # クエリ実行
             self.cur.execute(sql)
@@ -48,37 +55,41 @@ class db_accessor:
         except Exception as e:
             print(f"query error: \r\n{e}")
 
+
     # UPDATE実行
-    def excecute_update(self, sql):
+    def execute_update(self, sql: str, value: list):
 
         try:
-            self.cur.execute(sql)
-            # self.conn.commit()
+            self.cur.executemany(sql, value)
+            if self.commit_flg: self.conn.commit()
+            # 更新の必要がない場合、0を返すので、最大値で1を返す
             return max(self.cur.rowcount, 1)
         except Exception as e:
             self.conn.rollback()
             print(f"update error: \r\n{e}")
-            # print(f"query: {sql}")
+
 
     # INSERT実行
-    def execute_insert(self, sql):
-        
+    def execute_insert(self, sql: str, values: list):
+
         try:
-            self.cur.execute(sql)
-            # self.conn.commit()
+            self.cur.executemany(sql, values)
+            if self.commit_flg: self.conn.commit()
             return self.cur.rowcount
         except Exception as e:
             self.conn.rollback()
             print(f"insert error: \r\n{e}")
-            # print(f"query: {sql}")
+            # print(self.cur._executed)
+
 
     # DELETE実行
-    def exceute_delete(self, sql):
+    def execute_delete(self, sql: str):
 
         try:
             self.cur.execute(sql)
-            # self.conn.commit()
+            if self.commit_flg: self.conn.commit()
             return self.cur.rowcount
         except Exception as e:
             self.conn.rollback()
             print(f"delete error: \r\n{e}")
+

@@ -1,2 +1,3 @@
 .DS_Store
 /tamaya/__pycache__/*
+/tamaya/dataclass/__pycache__/*
