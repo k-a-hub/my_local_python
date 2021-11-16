@@ -3,9 +3,8 @@ from math import floor
 from sys import argv, exit
 from time import perf_counter
 
-from mysql.connector.fabric.connection import FABRICS
-
 from db_accessor import db_accessor
+from dtb_customer import dtb_customer
 from dtb_customer_address import dtb_customer_address
 from dtb_order import dtb_order
 
@@ -82,16 +81,15 @@ if __name__ == '__main__':
     # 追加処理
     print(f"\t追加実行件数: {obj_customer_address.exec_insert()}件")
 
+    # dtb_customerへの反映
+    obj_customer = dtb_customer(dba)
+    # 依頼主IDと受注IDをキーに更新リストへの追加を行う
+    obj_customer.add_update_list(obj_order.customer_id_order_dict)
+    print(f"\t更新実行件数: {obj_customer.exec_update()}件")
+
     print(f"処理にかかった時間: {floor(perf_counter() - start_time)}秒")
     # 処理終了
     exit()
-
-    # dtb_customerへの反映
-    obj_customer = customer.dtb_customer(dba)
-    # 最新受注情報リストを元にdtb_customer更新情報を作成
-    obj_customer.add_update_list(obj_order.customer_id_order_id_dict)
-    print(f"dtb_customerの更新件数: {len(obj_customer.update_list)}件")
-    print(f"更新実行件数: {obj_customer.exec_update(db_accessor)}件")
 
     # 今シーズンで削除のお届け先情報の削除
     obj_customer_address.get_delete_end_season(db_accessor)

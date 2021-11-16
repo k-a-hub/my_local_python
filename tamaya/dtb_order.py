@@ -13,6 +13,8 @@ class dtb_order:
         self.db_accessor: db_accessor = dba
         # 依頼主IDをキーに受注IDを配列化した変数
         self.customer_id_order_id_dict: dict = {}
+        # 依頼主IDをキーに受注情報を配列化した変数
+        self.customer_id_order_dict: dict = {}
 
 
     # 期間内受注一覧取得
@@ -23,7 +25,26 @@ class dtb_order:
             SELECT
                 order.id AS order_id
                 ,order.customer_id AS customer_id
+                ,order.sex_id
+                ,order.job_id
+                ,order.country_id
+                ,order.pref_id
+                ,order.name01
+                ,order.name02
+                ,order.kana01
+                ,order.kana02
+                ,order.company_name
+                ,order.postal_code
+                ,order.addr01
+                ,order.addr02
+                ,order.email
+                ,order.phone_number
+                ,order.birth
+                ,order.update_date
                 ,order.order_date
+                ,order.agent_cd
+                ,order.sales_account_no
+                ,order.position
             FROM
                 dtb_order AS `order`
             JOIN
@@ -64,4 +85,14 @@ class dtb_order:
             else:
                 # 依頼主IDをキーに受注IDの配列を追加
                 self.customer_id_order_id_dict[customer_id] = [order_id]
+
+            # 既に依頼主IDが存在するか
+            if customer_id in self.customer_id_order_dict:
+                # 最新の受注情報か
+                if order_data.order_date >= self.customer_id_order_dict[customer_id].order_date:
+                    # 最新の受注方法を格納
+                    self.customer_id_order_dict[customer_id] = order_data
+            else:
+                # 依頼主IDをキーに受注情報の配列に追加
+                self.customer_id_order_dict[customer_id] = order_data
 
