@@ -16,6 +16,7 @@ class dtb_customer:
         # 更新リスト
         self.update_list: list = []
 
+
     # 更新リストの追加
     def add_update_list(self, customer_id_order_dict: dict):
 
@@ -54,9 +55,11 @@ class dtb_customer:
         print(f" dtb_customerの更新件数: {len(self.update_list)}件")
         print("------------------------------")
 
+
     # 更新処理の実行
     def exec_update(self):
 
+        print("dtb_customerへの反映")
         # 更新件数
         upd_count = 0
         # 更新データがある場合に実施
@@ -92,5 +95,5 @@ class dtb_customer:
                 # 更新実施
                 upd_count += self.dba.execute_update(update_sql, [astuple(update)])
 
-        return upd_count
+        print(f"\t更新実行件数: {upd_count}件")
 

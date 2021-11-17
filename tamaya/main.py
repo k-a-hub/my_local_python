@@ -75,23 +75,25 @@ if __name__ == '__main__':
     obj_customer_address.add_upsert_list(obj_order.customer_id_order_id_dict)
 
     # dtb_customer_addressへの反映
-    print("dtb_customer_addressへの反映")
     # 更新処理
-    print(f"\t更新実行件数: {obj_customer_address.exec_update()}件")
+    obj_customer_address.exec_update()
     # 追加処理
-    print(f"\t追加実行件数: {obj_customer_address.exec_insert()}件")
+    obj_customer_address.exec_insert()
 
-    # dtb_customerへの反映
+    # dtb_customer用のリスト保持オブジェクト
     obj_customer = dtb_customer(dba)
     # 依頼主IDと受注IDをキーに更新リストへの追加を行う
     obj_customer.add_update_list(obj_order.customer_id_order_dict)
-    print(f"\t更新実行件数: {obj_customer.exec_update()}件")
-
-    print(f"処理にかかった時間: {floor(perf_counter() - start_time)}秒")
-    # 処理終了
-    exit()
+    # dtb_customerへの反映
+    # 更新処理
+    obj_customer.exec_update()
 
     # 今シーズンで削除のお届け先情報の削除
-    obj_customer_address.get_delete_end_season(db_accessor)
-    print(f"削除実行件数: {obj_customer_address.exec_delete(db_accessor)}件")
+    obj_customer_address.get_delete_end_season()
+    # 削除処理
+    obj_customer_address.exec_delete()
+
+    print(f"\r\n処理にかかった時間: {floor(perf_counter() - start_time)}秒")
+    # 処理終了
+    exit()
 
