@@ -2,6 +2,7 @@ from dataclasses import astuple
 from datetime import datetime
 
 from dataclass.dtb_customer_address_data import dtb_customer_address_data
+from dataclass.dtb_customer_address_delete_data import dtb_customer_delete_data
 from dataclass.dtb_customer_address_insert_data import \
     dtb_customer_address_insert_data
 from dataclass.dtb_customer_address_update_data import \
@@ -140,6 +141,7 @@ class dtb_customer_address:
         print(f" dtb_customer_addresの更新件数: {len(self.update_list)}件")
         print(f" dtb_customer_addresの追加件数: {len(self.insert_list)}件")
         print("------------------------------")
+        print("dtb_customer_addressへの反映")
 
 
     # 更新リスト追加
@@ -198,36 +200,40 @@ class dtb_customer_address:
 
 
     # 今シーズンで削除のお届け先情報の取得
-    def get_delete_end_season(self, instance_db_accessor):
+    def get_delete_end_season(self):
         # 今シーズンで削除のお届け先情報のSELECT文
-        delete_end_season_select_sql = f"""
+        delete_end_season_select_sql: str = f"""
             SELECT
                 id
             FROM
-                dtb_customer_address
+                `{__class__.__name__}`
             WHERE
                 delete_end_season = 1
         """
 
-        # 取得して削除リストに詰める
-        self.add_delete_list(instance_db_accessor.execute_query(delete_end_season_select_sql))
-        print(f"今シーズンで削除のお届け先リスト: {len(self.delete_list)}")
+        # 今シーズンで削除のお届け先情報を取得
+        delete_end_season_list: list = self.dba.execute_query(delete_end_season_select_sql)
+        # データクラスに変換してリスト化
+        delete_end_season_data_list: list = [dtb_customer_address_data(**d) for d in delete_end_season_list]
 
-        pass
+        # 取得して削除リストに詰める
+        self.add_delete_list(delete_end_season_data_list)
+        print("------------------------------")
+        print(f" 今シーズンで削除のお届け先リスト: {len(self.delete_list)}件")
+        print("------------------------------")
 
 
     # 削除リスト追加
-    def add_delete_list(self, customer_address_list):
+    def add_delete_list(self, customer_address_list: list):
 
         for customer_address in customer_address_list:
 
             # 削除するデータ
-            delete = []
-            # ID
-            delete.append(customer_address["id"])
-
+            data = dtb_customer_delete_data(
+                customer_address.id
+            )
             # 削除するお届け先を追加
-            self.delete_list.append(delete)
+            self.delete_list.append(data)
 
 
     # 更新処理
@@ -264,7 +270,8 @@ class dtb_customer_address:
                 # 更新実施
                 upd_count += self.dba.execute_update(update_sql, [astuple(update)])
 
-        return upd_count
+        print(f"\t更新実行件数: {upd_count}件")
+
 
     # 追加処理
     def exec_insert(self):
@@ -293,24 +300,30 @@ class dtb_customer_address:
                 # 登録実施
                 ins_count += self.dba.execute_insert(insert_sql, tuples_list)
 
-        return ins_count
+        print(f"\t追加実行件数: {ins_count}件")
 
 
     # 削除処理
-    def exec_delete(self, instance_db_accessor):
-        del_count = 0
+    def exec_delete(self):
+
+        print("dtb_customer_addressの今シーズン削除のお届け先削除")
+        # 削除件数
+        del_count: int = 0
+        # 削除データがある場合に実施
         if len(self.delete_list) > 0:
-            delete_sql = "\
-                DELETE FROM \
-                    `dtb_customer_address`\
+
+            # 削除SQL
+            delete_sql = f"""
+                DELETE FROM
+                    `{__class__.__name__}`
                 WHERE\
-                    id IN ({})\
-            "
-            values_str = ""
-            for i, delete in enumerate(self.delete_list):
-                values_str += "," if i != 0 else ""
-                for d in delete:
-                    values_str += str(d)
-            del_count += instance_db_accessor.execute_delete(delete_sql.format(values_str))
-        return del_count
+                    id IN ({",".join('%s' for i in range(0, len(dtb_customer_delete_data.__annotations__.keys())))})
+            """
+
+            # タプルに変換してリスト化
+            tuples_list: list = [astuple(d) for d in self.delete_list]
+            # 削除実施
+            del_count += self.dba.execute_delete(delete_sql, tuples_list)
+
+        print(f"\t削除実行件数: {del_count}件")
 

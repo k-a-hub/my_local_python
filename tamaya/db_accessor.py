@@ -83,10 +83,10 @@ class db_accessor:
 
 
     # DELETE実行
-    def execute_delete(self, sql: str):
+    def execute_delete(self, sql: str, values: list):
 
         try:
-            self.cur.execute(sql)
+            self.cur.executemany(sql, values)
             if self.commit_flg: self.conn.commit()
             return self.cur.rowcount
         except Exception as e:
