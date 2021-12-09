@@ -15,6 +15,8 @@ class dtb_order:
         self.customer_id_order_id_dict: dict = {}
         # 依頼主IDをキーに受注情報を配列化した変数
         self.customer_id_order_dict: dict = {}
+        # 依頼主IDのリスト
+        self.customer_id_list: list = []
 
 
     # 期間内受注一覧取得
@@ -95,4 +97,9 @@ class dtb_order:
             else:
                 # 依頼主IDをキーに受注情報の配列に追加
                 self.customer_id_order_dict[customer_id] = order_data
+
+        # 差分はないはずだけど、2つのdictのキーを配列に変換して、一意の値化
+        customer_id_list: set = set(list(self.customer_id_order_dict.keys()) + list(self.customer_id_order_dict.keys()))
+        # 受注の依頼主IDをリストに変換して保持
+        self.customer_id_list = list(customer_id_list)
 

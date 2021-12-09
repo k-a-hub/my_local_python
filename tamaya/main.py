@@ -6,6 +6,7 @@ from time import perf_counter
 from db_accessor import db_accessor
 from dtb_customer import dtb_customer
 from dtb_customer_address import dtb_customer_address
+from dtb_gift_prelist import dtb_gift_prelist
 from dtb_order import dtb_order
 
 
@@ -92,6 +93,12 @@ if __name__ == '__main__':
     obj_customer_address.get_delete_end_season()
     # 削除処理
     obj_customer_address.exec_delete()
+
+    # dtb_gift_prelist用リスト保持オブジェクト
+    obj_gift_prelist = dtb_gift_prelist(dba)
+    obj_gift_prelist.make_insert_data(obj_order.customer_id_list)
+    # 追加処理
+    obj_gift_prelist.exec_insert()
 
     print(f"\r\n処理にかかった時間: {floor(perf_counter() - start_time)}秒")
     # 処理終了
