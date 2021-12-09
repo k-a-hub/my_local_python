@@ -172,41 +172,6 @@ class dtb_gift_prelist:
         # お届け先の繰り返し
         for customer_address_data in customer_address_data_list:
 
-            # お届け先の購入商品を取得
-            order_item_select_sql: str = f"""
-                SELECT
-                    item.product_name
-                    ,item.quantity
-                    ,item.price
-                FROM
-                    dtb_order_item AS `item`
-                JOIN (
-                    SELECT
-                        MAX(item.order_id) AS `order_id`
-                    FROM
-                        dtb_customer_address AS `ca`
-                    LEFT OUTER JOIN
-                        dtb_shipping AS `ship` ON ca.name01 = ship.name01
-                      AND ca.name02 = ship.name02
-                    LEFT OUTER JOIN
-                        dtb_order_item AS `item` ON ship.id = item.shipping_id
-                    LEFT OUTER JOIN
-                        dtb_order AS `o` ON ship.order_id = o.id
-                    WHERE
-                        ca.customer_id = {customer_address_data.customer_id}
-                      AND ca.name01 = '{customer_address_data.name01}'
-                      AND ca.name02 = '{customer_address_data.name02}'
-                ) AS `temp1` ON item.order_id = temp1.order_id
-                JOIN
-                    dtb_shipping AS `ship` ON item.shipping_id = ship.id
-                WHERE
-                    item.product_code IS NOT NULL
-                  AND ship.name01 = '{customer_address_data.name01}'
-                  AND ship.name02 = '{customer_address_data.name02}'
-            """
-            # お届け先の購入商品一覧を取得
-            order_item_list: list = self.dba.execute_query(order_item_select_sql)
-
             # 電話番号の判別
             phone_type: str = self.type_phone_number(customer_address_data.phone_number)
             # 電話番号の分割
@@ -229,9 +194,6 @@ class dtb_gift_prelist:
 
             # 電話番号の設定
             data.set_phone_number(self.phone_number_name, self.mobile_number_name, phone_type, split_phone_number_dict)
-
-            # 購入商品の設定
-            data.set_product(order_item_list)
 
             # 戻り値のリストに詰める
             gift_prelist_shipping_data_list.append(data)

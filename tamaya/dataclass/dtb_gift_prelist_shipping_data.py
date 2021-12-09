@@ -61,22 +61,3 @@ class dtb_gift_prelist_shipping_data:
             self.shipping_phone_number2 = split_phone_number_dict['customer_mobile_number2']
             self.shipping_phone_number3 = split_phone_number_dict['customer_mobile_number3']
 
-
-    # 購入商品設定
-    def set_product(self, order_item_list: list):
-
-        # 購入数
-        item_num = len(order_item_list)
-
-        if item_num == 1:
-            self.shipping_product_name1 = order_item_list[0]['product_name']
-            self.shipping_product_quantity1 = order_item_list[0]['quantity']
-            self.shipping_product_price1 = order_item_list[0]['price']
-        elif item_num == 2:
-            self.shipping_product_name1 = order_item_list[0]['product_name']
-            self.shipping_product_quantity1 = order_item_list[0]['quantity']
-            self.shipping_product_price1 = order_item_list[0]['price']
-            self.shipping_product_name2 = order_item_list[1]['product_name']
-            self.shipping_product_quantity2 = order_item_list[1]['quantity']
-            self.shipping_product_price2 = order_item_list[1]['price']
-
