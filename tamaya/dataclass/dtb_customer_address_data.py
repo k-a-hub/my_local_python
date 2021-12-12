@@ -46,4 +46,6 @@ class dtb_customer_address_data:
     page_no: int = field(default=None)
     # 今シーズンで削除
     delete_end_season: int = field(default=None)
+    # 都道府県名
+    pref_name: str = field(default=None)
 
