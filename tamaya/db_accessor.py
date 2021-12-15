@@ -4,12 +4,12 @@ from mysql.connector import connect
 class db_accessor:
 
     # mysql接続情報
-    # saga_tamaya_mysql_1への接続情報
+    # 別コンテナのtamaya_mysqlへの接続情報
     config: dict = {
-        'host': 'saga_tamaya_mysql_1'
+        'host': 'tamaya_mysql'
         , 'port': '3306'
-        , 'user': 'dbuser'
-        , 'password': 'secret'
+        , 'user': 'root'
+        , 'password': 'root'
         , 'database': 'sagatamaya_ec1'
     }
 
