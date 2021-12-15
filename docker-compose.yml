@@ -9,3 +9,21 @@ services:
     tty: true
     volumes:
       - ./tamaya:/home/root/opt:cached
+  mysql:
+    build:
+      context: ./
+      dockerfile: Dockerfile-mysql
+    container_name: 'tamaya_mysql'
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sagatamaya_ec1
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./mysql/log:/var/log/mysql
+      - ./mysql/initdb.d/:/docker-entrypoint-initdb.d
+    ports:
+      - 23308:3306
+
+volumes:
+  mysql-data:

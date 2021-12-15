@@ -1,3 +1,13 @@
+# 下記ディレクトリやファイルはgitへの追加を行わない
+
+# Macで作成される隠しファイル
 .DS_Store
+
+# pythonファイルのビルドキャッシュファイル
 /tamaya/__pycache__/*
 /tamaya/dataclass/__pycache__/*
+
+# mysqlのログファイル
+/mysql/log/*
+# mysqlのdumpファイル
+/mysql/initdb.d/0_sagatamaya.sql.gz
