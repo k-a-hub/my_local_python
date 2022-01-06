@@ -17,6 +17,10 @@ class dtb_order:
         self.customer_id_order_dict: dict = {}
         # 依頼主IDのリスト
         self.customer_id_list: list = []
+        # 非会員の名前と電話番号をキーに受注情報を格納した変数
+        self.non_customer_dict: dict = {}
+        # 非会員の名前と電話番号をキーに受注IDを配列化した変数
+        self.non_customer_order_id_dict: dict = {}
 
 
     # 期間内受注一覧取得
@@ -49,7 +53,7 @@ class dtb_order:
                 ,order.position
             FROM
                 dtb_order AS `order`
-            JOIN
+            LEFT OUTER JOIN
                 dtb_customer AS `customer` ON order.customer_id = customer.id
             WHERE
                 order.payment_id IN (7, 8, 9)
@@ -79,6 +83,32 @@ class dtb_order:
             order_id: int = order_data.order_id
             # 依頼主ID
             customer_id: int = order_data.customer_id
+
+            # 非会員の受注か確認
+            if customer_id is None:
+                # 名前と電話番号を結合
+                name_phone_join = f"{order_data.name01},{order_data.name02},{order_data.phone_number}"
+
+                # 既に名前と電話番号が存在するか
+                if name_phone_join in self.non_customer_dict:
+                    # 最新の受注情報か
+                    if order_data.order_date >= self.non_customer_dict[name_phone_join].order_date:
+                        # 最新の受注情報を格納
+                        self.non_customer_dict[name_phone_join] = order_data
+                else:
+                    # 名前と電話番号をキーに受注情報の配列に追加
+                    self.non_customer_dict[name_phone_join] = order_data
+
+                # 既に名前と電話番号が存在するか
+                if name_phone_join in self.non_customer_order_id_dict:
+                    # 受注ID配列に追加
+                    self.non_customer_order_id_dict[name_phone_join].append(order_id)
+                else:
+                    # 非会員の名前と電話番号をキーに受注IDの配列に追加
+                    self.non_customer_order_id_dict[name_phone_join] = [order_id]
+
+                # 非会員なので以降の処理は行わず、次の受注を参照
+                continue
 
             # 既に依頼主IDが存在するか
             if customer_id in self.customer_id_order_id_dict:

@@ -89,6 +89,17 @@ if __name__ == '__main__':
     # 更新処理
     obj_customer.exec_update()
 
+    # 非会員ユーザの登録処理
+    # dtb_customerの登録
+    obj_customer.add_insert_list(obj_order.non_customer_dict)
+    obj_customer.exec_insert()
+    obj_customer.make_non_customer_list(obj_order.non_customer_order_id_dict)
+
+    obj_customer_address.clean_upsert_list()
+    obj_customer_address.add_upsert_list(obj_customer.non_customer_id_order_id_dict)
+    # dtb_customer_addressの登録
+    obj_customer_address.exec_insert()
+
     # 今シーズンで削除のお届け先情報の削除
     obj_customer_address.get_delete_end_season()
     # 削除処理
