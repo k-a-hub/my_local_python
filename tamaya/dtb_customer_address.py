@@ -236,6 +236,13 @@ class dtb_customer_address:
             self.delete_list.append(data)
 
 
+    # 保持している登録リストと更新リストの削除
+    def clean_upsert_list(self):
+        self.deduplication_latest_shipping_list.clear()
+        self.insert_list.clear()
+        self.update_list.clear()
+
+
     # 更新処理
     def exec_update(self):
 
