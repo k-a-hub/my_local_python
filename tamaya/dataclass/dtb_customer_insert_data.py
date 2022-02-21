@@ -50,4 +50,6 @@ class dtb_customer_insert_data:
     password: str
     # シークレットキー
     secret_key: str = field(default=None)
+    # 会員ステータスID
+    customer_status_id: int = field(default=1)
 

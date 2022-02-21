@@ -77,7 +77,7 @@ class dtb_customer_address:
                     ,accept_no
                 FROM (
                     SELECT
-                        MAX(ship.id) AS ship_id, name01, name02, MAX(update_date)
+                        ship.id AS ship_id, name01, name02, MAX(update_date)
                     FROM
                         dtb_shipping AS `ship`
                     WHERE
@@ -87,13 +87,33 @@ class dtb_customer_address:
                     GROUP BY
                         name01
                         ,name02
+                        ,id
                 ) AS `ship1`
                 JOIN
                     dtb_shipping AS `ship` ON ship.id = ship1.ship_id
                 JOIN
                     dtb_order_item AS `item` ON ship.id = item.shipping_id
                 WHERE
-                    item.product_code IS NOT NULL
+                    ship1.ship_id IN (
+                        SELECT
+                            MAX(ship2.id)
+                        FROM
+                            dtb_shipping AS `ship2`
+                        JOIN
+                            dtb_order_item AS `item` ON ship2.id = item.shipping_id
+                        WHERE
+                            ship2.order_id IN (
+                                {",".join([str(o) for o in order_id_list])}
+                            )
+                          AND
+                            item.product_code IS NOT NULL
+                        GROUP BY
+                            name01
+                            ,name02
+                    )
+                GROUP BY
+                    ship.name01
+                    ,ship.name02
             """
             # 受注IDをキーにお届け先と購入商品を取得
             select_list: list = self.dba.execute_query(order_shipping_join_order_item_select_sql)
@@ -186,7 +206,7 @@ class dtb_customer_address:
             ,shipping.postal_code
             ,shipping.addr01
             ,shipping.addr02
-            ,shipping.postal_code
+            ,shipping.phone_number
             ,self.insert_create_date
             ,shipping.update_date
             ,self.insert_discriminator_type

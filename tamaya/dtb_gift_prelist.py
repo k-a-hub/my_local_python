@@ -1,15 +1,14 @@
 from dataclasses import astuple
 
-from dataclass.dtb_customer_address_data import dtb_customer_address_data
-from dataclass.dtb_customer_data import dtb_customer_data
 from dataclass.dtb_gift_prelist_customer_data import \
     dtb_gift_prelist_customer_data
 from dataclass.dtb_gift_prelist_insert_data import dtb_gift_prelist_insert_data
 from dataclass.dtb_gift_prelist_shipping_data import \
     dtb_gift_prelist_shipping_data
+from dataclass.dtb_order_data import dtb_order_data
+from dataclass.dtb_shipping_data import dtb_shipping_data
 from db_accessor import db_accessor
 from dtb_customer import dtb_customer
-from dtb_customer_address import dtb_customer_address
 
 
 class dtb_gift_prelist:
@@ -37,86 +36,74 @@ class dtb_gift_prelist:
 
 
     # 登録データ生成
-    def make_insert_data(self, customer_id_list: list):
+    def make_insert_data(self, order_id_dict: dict):
 
-        for customer_id in customer_id_list:
+        # 予測変換を出すために定義
+        order: dtb_order_data = None
 
-            # 依頼主の最新受注の承り票番号を取得
-            latest_order_sql = f"""
+        for order_id, order in order_id_dict.items():
+
+            # 承り票番号を取得
+            accept_no_select_sql: str = f"""
                 SELECT
-                    order.id
-                    ,order.order_date
-                    -- TODO: 承り票番号がない場合は0を仮代入
-                    ,IFNULL(item.accept_no, 0) AS `accept_no`
-                    ,shop_id
+                    IFNULL(accept_no, 0) AS `accept_no`
                 FROM
-                    dtb_order AS `order`
-                LEFT OUTER JOIN
-                    dtb_order_item AS `item`
-                  ON order.id = item.order_id
+                    dtb_order_item
                 WHERE
-                    order.customer_id = {customer_id}
-                ORDER BY
-                    order.order_date DESC
-                    ,order.id DESC
+                    order_id = {order_id}
                 LIMIT
                     1
             """
-            # 最新の受注情報1件を取得
-            latest_order = self.dba.execute_query(latest_order_sql)[0]
+            select_list: list = self.dba.execute_query(accept_no_select_sql)
+            accept_no: int = 0
+            # 商品が1件も無い場合
+            if len(select_list) >= 1:
+                accept_no = select_list[0]['accept_no']
 
-            # 登録更新を行った受注の依頼主情報を取得
-            customer_select_sql = f"""
-                SELECT
-                    customer.id
-                    ,customer.phone_number
-                    ,customer.postal_code
-                    ,pref.name AS `pref_name`
-                    ,customer.addr01
-                    ,customer.addr02
-                    ,customer.company_name
-                    ,customer.position
-                    ,customer.name01
-                    ,customer.name02
-                    ,customer.agent_cd
-                    ,mem.name AS `mem_name`
-                    ,customer.sales_account_no
-                FROM
-                    `{dtb_customer.__name__}` AS `customer`
-                JOIN
-                    `mtb_pref` AS `pref`
-                  ON customer.pref_id = pref.id
-                LEFT OUTER JOIN
-                    `dtb_member` AS `mem`
-                  ON customer.agent_cd = mem.id
-                WHERE
-                    customer.id = {customer_id}
-            """
-            # 会員情報を取得
-            customer = self.dba.execute_query(customer_select_sql)[0]
-            # データクラスに変換
-            customer_data = dtb_customer_data(**customer)
+            # 非会員の場合、依頼主IDを取得
+            if order.customer_id is None:
+                customer_id_select_sql: str = f"""
+                    SELECT
+                        id
+                    FROM
+                        {dtb_customer.__name__}
+                    WHERE
+                        name01 = '{order.name01}'
+                      AND
+                        name02 = '{order.name02}'
+                      AND
+                        phone_number = '{order.phone_number}'
+                """
+                order.customer_id = self.dba.execute_query(customer_id_select_sql)[0]['id']
 
             # 依頼主側のデータ生成
-            gift_prelist_customer_data: dtb_gift_prelist_customer_data = self.make_gift_prelist_customer(latest_order, customer_data)
+            gift_prelist_customer_data: dtb_gift_prelist_customer_data = self.make_gift_prelist_customer(accept_no, order)
 
-            # 登録更新を行った受注の依頼主のお届け先情報を取得
-            customer_address_select_sql = f"""
+            # お届け先を取得
+            shipping_select_sql = f"""
                 SELECT
-                    c_addr.*
-                    ,pref.name AS `pref_name`
+                    pref.name AS `pref_name`
+                    ,ship.name01
+                    ,ship.name02
+                    ,ship.company_name
+                    ,ship.phone_number
+                    ,ship.postal_code
+                    ,ship.addr01
+                    ,ship.addr02
+                    ,ship.position
+                    ,ship.title
                 FROM
-                    `{dtb_customer_address.__name__}` AS `c_addr`
+                    dtb_shipping AS `ship`
                 JOIN
-                    `mtb_pref` AS `pref`
-                  ON c_addr.pref_id = pref.id
+                    mtb_pref AS `pref`
+                  ON ship.pref_id = pref.id
                 WHERE
-                    c_addr.customer_id = {customer_id}
+                    order_id = {order_id}
             """
-            customer_address_list = self.dba.execute_query(customer_address_select_sql)
-            customer_address_data_list = [dtb_customer_address_data(**ca) for ca in customer_address_list]
+            shipping_list: list = self.dba.execute_query(shipping_select_sql)
+            shipping_data_list: list = [dtb_shipping_data(**s) for s in shipping_list]
             # お届け先側のデータ生成
-            gift_prelist_shipping_data_list: list = self.make_gift_prelist_shipping(customer_address_data_list)
+            gift_prelist_shipping_data_list = self.make_gift_prelist_shipping(shipping_data_list)
 
             # 登録データを整形して追加
             self.add_insert_list(gift_prelist_customer_data, gift_prelist_shipping_data_list)
@@ -127,73 +114,56 @@ class dtb_gift_prelist:
 
 
     # 登録データの依頼主側を生成
-    def make_gift_prelist_customer(self, latest_order: dict, customer_data: dtb_customer_data):
-
-        # 電話番号の判別
-        phone_type = self.type_phone_number(customer_data.phone_number)
-        # 電話番号の分割
-        split_phone_number_dict: dict = self.split_phone_number(phone_type, customer_data.phone_number)
+    def make_gift_prelist_customer(self, accept_no: int, order: dtb_order_data):
 
         # 登録するデータ
         data: dtb_gift_prelist_customer_data = dtb_gift_prelist_customer_data(
-            accept_no=latest_order['accept_no']
-            ,shop_code=latest_order['shop_id']
-            ,customer_id=customer_data.id
-            ,customer_phone_number=customer_data.phone_number
-            ,customer_phone_number1=split_phone_number_dict['customer_phone_number1']
-            ,customer_phone_number2=split_phone_number_dict['customer_phone_number2']
-            ,customer_phone_number3=split_phone_number_dict['customer_phone_number3']
-            ,customer_postal_code1=customer_data.postal_code[0:3]
-            ,customer_postal_code2=customer_data.postal_code[3:7]
-            ,customer_address1=customer_data.pref_name
-            ,customer_address2=customer_data.addr01
-            ,customer_address3=customer_data.addr02
-            ,customer_company_name=customer_data.company_name
-            ,customer_name=customer_data.name01 + '　' + customer_data.name02
-            ,customer_mobile_number1=split_phone_number_dict['customer_mobile_number1']
-            ,customer_mobile_number2=split_phone_number_dict['customer_mobile_number2']
-            ,customer_mobile_number3=split_phone_number_dict['customer_mobile_number3']
-            ,agent_code=customer_data.agent_cd
-            ,agent_name=customer_data.mem_name
-            ,sales_account_no=customer_data.sales_account_no
+            accept_no=accept_no
+            ,shop_code=order.shop_id
+            ,customer_id=order.customer_id
+            ,customer_phone_number=order.phone_number
+            ,customer_postal_code1=order.postal_code[0:3]
+            ,customer_postal_code2=order.postal_code[3:7]
+            ,customer_address1=f"{order.pref_name}{order.addr01}"
+            ,customer_address2=order.addr02
+            ,customer_company_name=order.company_name
+            ,customer_position=order.position
+            ,customer_name=f"{order.name01}　{order.name02}"
+            ,agent_code=order.agent_cd
+            ,agent_name=order.agent_name
+            ,sales_account_no=order.sales_account_no
+            ,customer_char_code=order.customer_kbn
         )
 
         return data
 
 
     # 登録データのお届け先側を生成
-    def make_gift_prelist_shipping(self, customer_address_data_list: list):
+    def make_gift_prelist_shipping(self, shipping_data_list: list):
 
         # 戻り値
         gift_prelist_shipping_data_list: list = []
         # ページ番号カウント
         page_no_count: int = 1
+        # 予測変換のため定義
+        shipping_data: dtb_shipping_data = None
 
         # お届け先の繰り返し
-        for customer_address_data in customer_address_data_list:
-
-            # 電話番号の判別
-            phone_type: str = self.type_phone_number(customer_address_data.phone_number)
-            # 電話番号の分割
-            split_phone_number_dict: dict = self.split_phone_number(phone_type, customer_address_data.phone_number)
+        for shipping_data in shipping_data_list:
 
             # 登録するデータ
             data: dtb_gift_prelist_shipping_data = dtb_gift_prelist_shipping_data(
                 shipping_pageno=page_no_count
-                ,shipping_phone_number=customer_address_data.phone_number
-                ,shipping_postal_code1=customer_address_data.postal_code[0:3]
-                ,shipping_postal_code2=customer_address_data.postal_code[3:7]
-                ,shipping_address1=customer_address_data.pref_name
-                ,shipping_address2=customer_address_data.addr01
-                ,shipping_address3=customer_address_data.addr02
-                ,shipping_company_name=customer_address_data.company_name
-                ,shipping_position=customer_address_data.position
-                ,shipping_name=f'{customer_address_data.name01}　{customer_address_data.name02}'
-                ,shipping_title=customer_address_data.title
+                ,shipping_phone_number=shipping_data.phone_number
+                ,shipping_postal_code1=shipping_data.postal_code[0:3]
+                ,shipping_postal_code2=shipping_data.postal_code[3:7]
+                ,shipping_address1=f"{shipping_data.pref_name}{shipping_data.addr01}"
+                ,shipping_address2=shipping_data.addr02
+                ,shipping_company_name=shipping_data.company_name
+                ,shipping_position=shipping_data.position
+                ,shipping_name=f"{shipping_data.name01}　{shipping_data.name02}"
+                ,shipping_title=shipping_data.title
             )
-
-            # 電話番号の設定
-            data.set_phone_number(self.phone_number_name, self.mobile_number_name, phone_type, split_phone_number_dict)
 
             # 戻り値のリストに詰める
             gift_prelist_shipping_data_list.append(data)
@@ -271,46 +241,4 @@ class dtb_gift_prelist:
 
         print(f"\t追加実行件数: {ins_count}件")
 
-
-    # 電話番号の判別
-    def type_phone_number(self, phone_number: str):
-
-        phone_type: str = ''
-
-        if phone_number[0:3] in self.mobile_phone_number_list:
-            # 携帯電話番号
-            phone_type = self.mobile_number_name
-        else:
-            # 固定電話番号
-            phone_type = self.phone_number_name
-
-        self.split_phone_number(phone_type, phone_number)
-
-        return phone_type
-
-
-    # 電話番号の分割
-    def split_phone_number(self, phone_type: str, phone_number: str):
-
-        split_dict: dict = {
-            'customer_phone_number1': None
-            ,'customer_phone_number2': None
-            ,'customer_phone_number3': None
-            ,'customer_mobile_number1': None
-            ,'customer_mobile_number2': None
-            ,'customer_mobile_number3': None
-        }
-
-        if phone_type == self.phone_number_name:
-            # 固定電話番号の場合
-            # TODO: 分割方法未定
-            pass
-        elif phone_type == self.mobile_number_name:
-            # 携帯電話番号の場合
-            # 3桁, 4桁, 4桁で分割
-            split_dict['customer_mobile_number1'] = phone_number[0:3]
-            split_dict['customer_mobile_number2'] = phone_number[3:7]
-            split_dict['customer_mobile_number3'] = phone_number[7:11]
-
-        return split_dict
 
