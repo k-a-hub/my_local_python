@@ -21,6 +21,8 @@ class dtb_order:
         self.non_customer_dict: dict = {}
         # 非会員の名前と電話番号をキーに受注IDを配列化した変数
         self.non_customer_order_id_dict: dict = {}
+        # gift_prelist用の受注IDをキーに受注情報を格納した変数
+        self.gift_prelist_order_id_dict: dict = {}
 
 
     # 期間内受注一覧取得
@@ -35,6 +37,7 @@ class dtb_order:
                 ,order.job_id
                 ,order.country_id
                 ,order.pref_id
+                ,pref.name AS pref_name
                 ,order.name01
                 ,order.name02
                 ,order.kana01
@@ -48,13 +51,20 @@ class dtb_order:
                 ,order.birth
                 ,order.update_date
                 ,order.order_date
+                ,order.shop_id
                 ,order.agent_cd
+                ,member.name AS agent_name
                 ,order.sales_account_no
                 ,order.position
+                ,IFNULL(customer.customer_kbn, 0) AS customer_kbn
             FROM
                 dtb_order AS `order`
             LEFT OUTER JOIN
                 dtb_customer AS `customer` ON order.customer_id = customer.id
+            JOIN
+                mtb_pref AS `pref` ON order.pref_id = pref.id
+            JOIN
+                dtb_member AS `member` ON order.agent_cd = member.id
             WHERE
                 order.payment_id IN (7, 8, 9)
               AND
@@ -83,6 +93,9 @@ class dtb_order:
             order_id: int = order_data.order_id
             # 依頼主ID
             customer_id: int = order_data.customer_id
+
+            # gift_prelist用に受注IDをキーに受注情報を格納
+            self.gift_prelist_order_id_dict[order_id] = order_data
 
             # 非会員の受注か確認
             if customer_id is None:
@@ -132,4 +145,8 @@ class dtb_order:
         customer_id_list: set = set(list(self.customer_id_order_dict.keys()) + list(self.customer_id_order_dict.keys()))
         # 受注の依頼主IDをリストに変換して保持
         self.customer_id_list = list(customer_id_list)
+        # gift_prelist用の受注IDを昇順で並び替え
+        tuple_list = sorted(self.gift_prelist_order_id_dict.items())
+        self.gift_prelist_order_id_dict.clear()
+        self.gift_prelist_order_id_dict.update(tuple_list)
 

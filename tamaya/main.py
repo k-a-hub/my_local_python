@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     # dtb_gift_prelist用リスト保持オブジェクト
     obj_gift_prelist = dtb_gift_prelist(dba)
-    obj_gift_prelist.make_insert_data(obj_order.customer_id_list)
+    obj_gift_prelist.make_insert_data(obj_order.gift_prelist_order_id_dict)
     # 追加処理
     obj_gift_prelist.exec_insert()
 

@@ -45,19 +45,3 @@ class dtb_gift_prelist_shipping_data:
     # お届け先購入商品金額2
     shipping_product_price2: int = field(default=0)
 
-
-    # 電話番号設定
-    def set_phone_number(self, phone_number_name: str, mobile_number_name: str, phone_type: str, split_phone_number_dict: dict):
-
-        # 分割した電話番号の格納を電話番号タイプにより分ける
-        if phone_type == phone_number_name:
-            # 固定電話の場合
-            self.shipping_phone_number1 = split_phone_number_dict['customer_phone_number1']
-            self.shipping_phone_number2 = split_phone_number_dict['customer_phone_number2']
-            self.shipping_phone_number3 = split_phone_number_dict['customer_phone_number3']
-        elif phone_type == mobile_number_name:
-            # 携帯電話の場合
-            self.shipping_phone_number1 = split_phone_number_dict['customer_mobile_number1']
-            self.shipping_phone_number2 = split_phone_number_dict['customer_mobile_number2']
-            self.shipping_phone_number3 = split_phone_number_dict['customer_mobile_number3']
-

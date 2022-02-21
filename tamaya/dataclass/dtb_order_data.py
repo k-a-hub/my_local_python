@@ -10,6 +10,8 @@ class dtb_order_data:
     country_id: int
     # 都道府県ID
     pref_id: int
+    # 都道府県名
+    pref_name: str
     # 性別ID
     sex_id: int
     # 職業ID
@@ -42,10 +44,16 @@ class dtb_order_data:
     update_date: str
     # 注文日
     order_date: str
+    # ショップコード
+    shop_id: int
     # 扱い者コード
     agent_cd: int
+    # 扱い者名
+    agent_name: str
     # 外商口座番号
     sales_account_no: str
     # 肩書
     position: str
+    # 顧客区分
+    customer_kbn: int
 
